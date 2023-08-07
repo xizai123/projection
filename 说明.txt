@@ -1,0 +1,7 @@
+运行步骤：
+
+0、解压项目文件
+1、Windows 徽标键+ R，输入 cmd，点击确定
+2、切换到项目所在目录（假设文件在桌面）cd Desktop\Projection
+3、输入运行命令：env\python.exe manage.py runserver
+4、浏览器中打开链接：http://127.0.0.1:8000/

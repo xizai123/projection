@@ -1,0 +1,142 @@
+<html>
+	<head>
+		<title>投影</title>
+
+		{% load staticfiles %}
+		<script> token= '{{ csrf_token }}';</script>
+         <!--导入CSS文件-->
+        <link rel="stylesheet" type="text/css" href="{% static 'css/home.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/flat-ui.min.css' %}">
+
+        <!--导入固有JS文件-->
+        <script src="{% static 'lib/d3.min.js' %}"></script>
+		<script src = "{%static 'lib/jquery-2.2.1.min.js' %}"></script>
+        <script src="{% static 'lib/bootstrap.min.js' %}"></script>
+        <script src="{% static 'lib/flat-ui.min.js' %}"></script>
+
+        <!--导入自定义JS文件-->
+        <script src="{% static 'js/variable.js' %}"></script>
+        <script src="{% static 'js/init.js' %}"></script>
+        <script src="{% static 'js/view.js' %}"></script>
+        <script src="{% static 'js/trailmap.js' %}"></script>
+        <script src="{% static 'js/request.js' %}"></script>
+
+
+	</head>
+
+	<div id="bodystyle">
+    <div id="container">
+        <div id="configure">
+            <div id="Data">
+                <div id="ControlTitle"><label style="padding-top: 5px;font-weight: bold">控制面板</label></div>
+                <div id="DataTitle"><label style="padding-top: 5px;font-weight: bold">数据特征</label></div>
+                <div id="DataSelect">
+                    <p style="position:relative;left:0px;top:0px;width:80px;">
+                    数据集
+                </p> 
+                <select class="form-control" id="selectData" onchange="init()"
+                        style="position: relative;padding-top: 2px;padding-left: 2px;padding-bottom: 1px ;
+                                width:100px;height:25px; left:95px;top:-42px; ">
+                    <option value=""></option>
+{#                    <option value="./static/data/Iris.csv">Iris</option>#}
+                    <option value="./static/data/Cars.csv">Cars</option>
+                    <option value="./static/data/Quality of Life Index.csv">Quality of Life Index</option>
+                    <option value="./static/data/Syn data.csv">Syn data</option>
+{#                    <option value="./static/data/Segmentation.csv">Segmentation</option>#}
+                    <option value="./static/data/Auto mpg.csv">Auto mpg</option>
+{#                    <option value="./static/data/Boston house.csv">Boston house</option>#}
+
+                </select>
+                <div style="height: 40px">
+                    <p style="position:relative;left:0px;top:-30px;width:80px">节点个数</p>
+                    <input class="form-control "
+                           style="font-size: 16px;
+                           position: relative; top:-73px;left:95px; width: 80px;height: 25px;"
+                           id="DataSize"
+                           size="2"
+                           type="text"/>
+                </div>
+                <div style="height: 40px">
+                    <p style="position:relative;left:0px;top:-30px;width:80px">数据维度</p>
+                    <input class="form-control"
+                           style="font-size: 16px;
+                           position: relative; top:-71px;left: 95px; width: 80px;height: 25px"
+                           id="Dimension"
+                           size="2"
+                           type="text"/>
+                </div>
+
+                </div>
+            </div>
+            <div id="Operations">
+                <div id="OperationsTitle">
+                    <label style="padding-top: 5px;font-weight: bold">模式选择</label>
+                </div>
+                    <div id="Point"><input name="Line"  type="radio" style="cursor: pointer" checked="true"  value="-1"
+                                           onclick="operationCheck(-1)"/><font style="padding-left: 10px">异常值</font></div>
+                    <div id="Lasso"><input name="Line" type="radio" style="cursor: pointer"  value="0"
+                                           onclick="operationCheck(0)"/><font style="padding-left: 10px">聚类</font></div>
+                    <div id="Line"><input name="Line" type="radio" style="cursor: pointer" value="1" onclick="operationCheck(1)"/><font
+                            style="padding-left: 10px">趋势</font></div>
+                    <div id="WidthLine">
+                        <p style="position:relative;left:0px;top:0px;width:120px">线宽</p>
+                        <input class="form-control"
+                           style="font-size: 16px;
+                           position: relative; top:-42px;left: 125px; width: 80px;height: 25px"
+                           id="toLinedist"
+                           size="2"
+                           type="text"/>
+                    </div>
+            </div>
+            <div id="Coloring">
+                <div id="ColoringTitle"><label style="padding-top: 5px;font-weight: bold">颜色标记</label></div>
+                <div id="SelectColor">
+                    <div class="mydropdown">
+                        <button class="mydropbtn" id="ColorButton" value="1"><label style="opacity: 0;" >Color</label>&nbsp;&nbsp;&nbsp;&nbsp;<span class="myarrow-down"></span></button>
+                        <div class="mydropdown-content">
+                        <a href="javascript:void(0)" onclick="brushColor(1)" style="background-color:#6D6D6D"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(2)" style="background-color:#CA312E"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(3)" style="background-color:#BBD35E"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(4)" style="background-color:#A67C52"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(5)" style="background-color:#764698"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(6)" style="background-color:#8DD3C7"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(7)" style="background-color:#2CA02C"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(8)" style="background-color:#FFC0CB"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(9)" style="background-color:#1EB0EE"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(10)" style="background-color:#418ABD"></a>
+                        <a href="javascript:void(0)" onclick="brushColor(11)" style="background-color:orange"></a>
+                        </div>
+                    </div>
+                </div>
+                <div id="PaintColor">
+                     <button class="btn" style="position: relative;width: 80px;height: 30px;padding: 0px;text-align:center;"onclick="stopBrush()" id="PaintButton"><label style="font-weight: bold;cursor: pointer;" >绘制</label></button>
+                </div>
+                <div id="ClearColor">
+                    <button class="btn" style="position: relative;width: 80px;height: 30px;padding: 0px;text-align:center;"onclick="deleteColor()"><label style="font-weight: bold;cursor: pointer;" >清除</label></button>
+                </div>
+            </div>
+            <div id="ProjectionManagement">
+                <div id="ProjectionManagementTitle"><label style="padding-top: 5px;font-weight: bold">投影操作</label></div>
+                <div id="SaveProjection"><button class="btn" style="position: relative;width: 80px;height: 30px;padding: 0px;text-align:center;" onclick="saveProjection()"><label style="font-weight: bold;cursor: pointer;" >保存</label></button></div>
+                <div id="Resample"><button class="btn" style="position: relative;width: 80px;height: 30px;padding: 0px;text-align:center;"onclick="requestDsimilarity()"><label style="font-weight: bold;cursor: pointer;" >重新计算</label></button></div>
+{#                <button class="btn" style="position: relative;width: 60px;height: 30px;padding: 0px;text-align:center;" onclick="setSubAnimation()"><label style="font-weight: bold;cursor: pointer;" >Start</label></button>#}
+            </div>
+        </div>
+        <div id="view">
+            <div id="viewtitle"><label style="padding-top: 5px;font-weight: bold">投影视图</label></div>
+            <div id="viewbody"></div>
+        </div>
+        <div id="projection">
+            <div id="projectiontitle"><label style="padding-top: 5px;font-weight: bold">投影轨迹视图</label></div>
+            <div id="projectionbody"></div>
+        </div>
+    </div>
+    </div>
+    <script type="text/javascript">
+    function aClick(){
+    console.log(1);
+    }
+    </script>
+	</body>
+</html>

@@ -311,7 +311,7 @@ function paintScatter(data){
     var g1 = svg.append("g").attr("id", "g1").attr("transform", "translate(" + offsetx + "," + offsety + ")");
 
     var rectcanvas=g1.append("rect").attr("id","rectcanvas").attr("x",0).attr("y",0).attr("width",xwidth).attr("height",ywidth).attr("opacity",0)
-        .on("mousemove",function () {
+        .on("mousemove",function () {       //鼠标每移动1像素触发一次该函数
             if(glovar.Is_set==false){
                 return
             }else{
@@ -320,10 +320,12 @@ function paintScatter(data){
                 var checky=d3.event.offsetY-offsety;
                 var checkwidth=20;
                 var checkheight=20;
+
                 g1.selectAll("circle").each(function (d, i) {
                 var each = d3.select(this);
                 var px = parseFloat(each.attr("cx"));
                 var py = parseFloat(each.attr("cy"));
+
                 if(px>=checkx-checkwidth&&px<=checkx+checkwidth&&py>=checky-checkheight&&py<=checky+checkheight){
                     each.attr("fill",glovar.brushingColor);
                     //刷同一种颜色的点属于同一个cluster
@@ -350,7 +352,7 @@ function paintScatter(data){
                     }else if(glovar.brushingColor==='orange'){
                         glovar.clusterName[i]=10
                     }
-
+                    glovar.checked_id.push(i)
                 }
                 glovar.pointsColor[i]=each.attr("fill");
                 });
@@ -1530,6 +1532,7 @@ function updateView(vector){
         glovar.Is_lasso=true;
         glovar.Is_line=false;
         document.getElementById("toLinedist").value=null;
+        glovar.beginTime=Date.now();     //点击聚类后开始计时
      }
      if(value==1){
         glovar.Is_point=false;

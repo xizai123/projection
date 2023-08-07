@@ -1,6 +1,7 @@
 /**
  * 保存投影
  */
+//点击保存视为一次交互结束
 function saveProjection(){
 
     deleteTrailmapInfor();
@@ -25,6 +26,28 @@ function saveProjection(){
     if(glovar.saveVec.length>1){
         requestMds(glovar.saveVec);
     }
+}
+
+//记录当前轮次的指标
+function updateRecord(){
+    //计算新增准确率
+    let res=[];
+    for(let i=0;i<=10;i++)res[i]=0;
+    for(let i=0;i<glovar.checked_id.length;i++){
+        let id=glovar.checked_id[i];
+        let clusterId=glovar.actualCluster[id];
+        res[clusterId]++;
+    }
+    let accNow=0;
+    for(let i=0;i<=10;i++)accNow=Math.max(accNow,res[i]);accNow/=glovar.dataSize;
+    let accLast=glovar.indic_record[glovar.indic_record.length-1].acc;
+    let acc=accNow+accLast;
+    //
+    let indic_now={
+        cumula_time:Date.now()-glovar.beginTime,        //累计时间
+        acc:acc,                                        //准确率
+    }
+    glovar.indic_record.push(indic_now)
 }
 
 /**

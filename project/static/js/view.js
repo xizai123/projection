@@ -301,6 +301,7 @@ function paintHistogram(histogramdata) {
  * @param data
  */
 function paintScatter(data){
+
     d3.select("#g1").remove();
     var offsetx = 250;
     var offsety = 200;
@@ -676,6 +677,9 @@ function paintSlider(){
  * @param vector
  */
 function paintStarCoordinate(vector) {
+
+    console.log('paintStarCoordinate-vector:',vector)
+
     d3.select("#g3").remove();
     d3.select(".tooltip2").remove();
     var tooltip=d3.select("body").append("div").attr("class","tooltip2").style("opacity",0);
@@ -1837,32 +1841,32 @@ function paintTravelButton(){
     var offsety=820;
     var svg=d3.select("#viewbody").select("svg");
     var g=svg.append("g").attr("id","g7").attr("transform","translate("+offsetx+","+offsety+")");
-    var rect=g.append("rect")
-        .attr("x",0)
-        .attr("y",0)
-        .attr("width",width)
-        .attr("height",height)
-        .attr("rx","5px")
-        .attr("fill","#DDDDDD");
-    var text=g.append("text")
-        .attr("x",width/2)
-        .attr("y",height/2+5)
-        .attr("fill","#475763")
-        .attr("font-size","15px")
-        .attr("font-weight","bold")
-        .attr("text-anchor","middle")
-        .text("过渡")
-        .on("mouseover",function () {
-            d3.select(this).attr("fill","white");
-            d3.select(this).attr("cursor","pointer");
-        })
-        .on("mouseout",function(){
-            d3.select(this).attr("fill","#475763");
-            d3.select(this).attr("cursor","default");
-        })
-        .on("click",function () {
-            setSubAnimation();
-        });
+    // var rect=g.append("rect")
+    //     .attr("x",0)
+    //     .attr("y",0)
+    //     .attr("width",width)
+    //     .attr("height",height)
+    //     .attr("rx","5px")
+    //     .attr("fill","#DDDDDD");
+    // var text=g.append("text")
+    //     .attr("x",width/2)
+    //     .attr("y",height/2+5)
+    //     .attr("fill","#475763")
+    //     .attr("font-size","15px")
+    //     .attr("font-weight","bold")
+    //     .attr("text-anchor","middle")
+    //     .text("过渡")
+    //     .on("mouseover",function () {
+    //         d3.select(this).attr("fill","white");
+    //         d3.select(this).attr("cursor","pointer");
+    //     })
+    //     .on("mouseout",function(){
+    //         d3.select(this).attr("fill","#475763");
+    //         d3.select(this).attr("cursor","default");
+    //     })
+    //     .on("click",function () {
+    //         setSubAnimation();
+    //     });
 }
 
 

@@ -6,6 +6,7 @@ function saveProjection(){
 
     deleteTrailmapInfor();
     glovar.saveVec.push(glovar.actionVec);
+    console.log('全局变量glovar:',glovar)
     if(glovar.saveVec.length==1){
         var offsetx=300;
         var offsety=300;
@@ -466,5 +467,35 @@ function paintAnimationCircle(cx,cy){
         .attr("fill","yellow");
 }
 
+
+
+/**
+ * 
+ * 获取力导向引布局
+ * @param links
+ * @param nodes
+ * 
+ */
+function getForceDirected(nodes,links){
+
+    __nodes = JSON.parse(JSON.stringify(nodes))
+    __links = JSON.parse(JSON.stringify(links))
+
+    let simulation = d3.forceSimulation().nodes(__nodes);
+    let linkForce = d3.forceLink(__links).id(d=>d.id)
+
+    simulation.force('charge_force', d3.forceManyBody().strength(-50))
+              .force('center_force', d3.forceCenter(0,0))//中心点为原点
+              .force('links', linkForce)
+
+    simulation.stop();
+    simulation.tick(300);
+
+    return {
+        'nodes':__nodes,
+        'links':__links,
+    }
+
+}
 
 

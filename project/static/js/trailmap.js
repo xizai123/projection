@@ -1,7 +1,7 @@
 /**
  * 保存投影
  */
-//点击保存视为一次交互结束
+//点击保存视为一次交互结束,需计算当轮交互的各种指标
 function saveProjection(){
 
     deleteTrailmapInfor();
@@ -26,26 +26,64 @@ function saveProjection(){
     if(glovar.saveVec.length>1){
         requestMds(glovar.saveVec);
     }
+    updateRecord()
 }
 
 //记录当前轮次的指标
 function updateRecord(){
-    //计算新增准确率
-    let res=[];
-    for(let i=0;i<=10;i++)res[i]=0;
-    for(let i=0;i<glovar.checked_id.length;i++){
-        let id=glovar.checked_id[i];
-        let clusterId=glovar.actualCluster[id];
-        res[clusterId]++;
+    //计算准确率、精确率、召回率、f1
+    let acc=0;let precision=0;let recall=0;let f1=0
+    for(let i=0;i<glovar.dataSize;i++){
+        let paintLabel=glovar.clusterName[i];
+        if(paintLabel!==-1)glovar.painted_id[paintLabel].setofId.push(i);
     }
-    let accNow=0;
-    for(let i=0;i<=10;i++)accNow=Math.max(accNow,res[i]);accNow/=glovar.dataSize;
-    let accLast=glovar.indic_record[glovar.indic_record.length-1].acc;
-    let acc=accNow+accLast;
-    //
+    for(let i=0;i<11;i++){
+        //占比最多的真实标签为该片颜色的预测标签
+        if(glovar.painted_id[i].setofId.length!==0){
+            let numOfLabel=[];for(let i=0;i<glovar.labelSize;i++)numOfLabel[i]=0;
+            for(let j=0;j<glovar.painted_id[i].setofId.length;j++){
+                let id=glovar.painted_id[i].setofId[j];
+                numOfLabel[glovar.actualCluster[id]]++;
+            }
+            let predicetedLabelNum=0;let predictedLabel=-1;
+            for(let i=0;i<glovar.labelSize;i++){
+                if(numOfLabel[i]>predicetedLabelNum){
+                    predicetedLabelNum=numOfLabel[i];
+                    predictedLabel=i;
+                }
+            }
+            acc+=predicetedLabelNum;
+            precision+=predicetedLabelNum/glovar.painted_id[i].setofId.length;
+            let actualNumofpredicetedLabel=0;
+            for(let i=0;i<glovar.dataSize;i++){
+                if(glovar.actualCluster[i]==predictedLabel)actualNumofpredicetedLabel++;
+            }
+            recall+=predicetedLabelNum/actualNumofpredicetedLabel;
+        }
+    }
+    acc/=glovar.dataSize;
+    precision/=glovar.labelSize;
+    recall/=glovar.labelSize;
+    f1=(2*precision*recall)/(precision+recall);
+
+    for(let i=0;i<11;i++){
+        glovar.painted_id[i]={
+            predictedLabel:-1,
+            setofId:[],
+        }
+    }
+
+    //计算距离一致性，轮廓系数
+    let dist_consis=0;let sil_coe=0;
+    
+
     let indic_now={
         cumula_time:Date.now()-glovar.beginTime,        //累计时间
         acc:acc,                                        //准确率
+        precision:precision,                            //精确率
+        f1:f1,                                          //f1
+        dist_consis:dist_consis,                        //距离一致性
+        sil_coe:sil_coe,                                //轮廓系数
     }
     glovar.indic_record.push(indic_now)
 }

@@ -23,14 +23,19 @@ var globalVariable = function () {
     ret.clearStarCoordinate=0;      //是否展示星坐标图
     ret.angle=[];                     //维度的度数
 
+    ret.labelSize=0;                    //真正有几类标签(集群）
     ret.actualCluster=[];               //每个点真实所属的集群名
     ret.clusterName=[];                //预测每个点所属集群的名字  初始全是-1
     ret.beginTime=0;                  //起始时间（从点击聚类模式开始计算,时间指标单位为毫秒）
-    ret.checked_id=[];                  //当前轮次被着色的点的id
-    ret.indic_record=[{
-        cumula_time:0,
-        acc:0,
-    }];                //记录所有轮次的指标
+    ret.painted_id=[];                  //当前轮次被着色的点
+    //最多分为11类
+    for(let i=0;i<11;i++){
+        ret.painted_id[i]={
+            predictedLabel:-1,
+            setofId:[],
+        }
+    }
+    ret.indic_record=[];              //记录所有轮次的指标
 
     ret.colorIndex=0;                //给数据点添加颜色的索引值
     ret.Is_set=false;                //是否给数据点赋了颜色

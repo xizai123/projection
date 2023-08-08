@@ -328,7 +328,7 @@ function paintScatter(data){
 
                 if(px>=checkx-checkwidth&&px<=checkx+checkwidth&&py>=checky-checkheight&&py<=checky+checkheight){
                     each.attr("fill",glovar.brushingColor);
-                    //刷同一种颜色的点属于同一个cluster
+                    //刷同一种颜色的点属于同一个cluster,当前系统只有11种颜色，最多区分11种聚类
                     if(glovar.brushingColor==='#6D6D6D'){
                         glovar.clusterName[i]=0
                     }else if(glovar.brushingColor==='#CA312E'){
@@ -352,7 +352,6 @@ function paintScatter(data){
                     }else if(glovar.brushingColor==='orange'){
                         glovar.clusterName[i]=10
                     }
-                    glovar.checked_id.push(i)
                 }
                 glovar.pointsColor[i]=each.attr("fill");
                 });

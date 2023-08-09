@@ -36,7 +36,6 @@ function saveProjection(){
         glovar.trail_links.push([glovar.begin_id,parseInt(subScatterID)])
     }
 
-    console.log('links:', glovar.trail_links)
 
     //将当前id保存
     glovar.begin_id = parseInt(subScatterID)
@@ -217,7 +216,7 @@ function converSubspace(mdsdata){
     for(let l of glovar.trail_links){
         links.push({'source':l[0],'target':l[1]})
     }
-    let layout_result = getForceDirected(nodes,links)
+    let layout_result = getForceDirected(nodes,links,width - 2 * padding,height - 2 * padding)
 
     let xMax = Math.max(...layout_result.nodes.map(v=>v.x))
     let xMin = Math.min(...layout_result.nodes.map(v=>v.x))
@@ -315,7 +314,6 @@ function converSubspace(mdsdata){
         })
         .style('cursor','pointer')
         .on("mouseover",function(){
-            console.log('hh')
             d3.select(this).style("stroke","orange");
         })
         .on("mouseout",function(){
@@ -715,7 +713,7 @@ function paintAnimationCircle(cx,cy){
  * @param nodes
  * 
  */
-function getForceDirected(nodes,links){
+function getForceDirected(nodes,links,width,height){
 
     __nodes = JSON.parse(JSON.stringify(nodes))
     __links = JSON.parse(JSON.stringify(links))
@@ -733,8 +731,8 @@ function getForceDirected(nodes,links){
                  .nodes(__nodes)
                  .links(__links)
                  .size([600,600])
-                 .gravity(.05)
-                 .charge(-240)
+                //  .gravity(.05)
+                 .charge(-1200)
                  .linkDistance(50)
                  .start();
     for(let i = 0;i < 3000;i++){

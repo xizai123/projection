@@ -4,14 +4,50 @@ from django.shortcuts import render_to_response, RequestContext
 from django.http import HttpResponse
 import json
 import numpy as np
+from sklearn import metrics
 
 # Create your views here.
 def home(request):
 	if request.method == 'POST':
+		#求轮廓系数与CH指数
+		if request.is_ajax() and request.POST['id'] == 'request_silhouette_score':
+			data=request.POST.get('data')
+			n=request.POST.get('n');n = n.encode("utf-8");n = int(n);m=2
+			label=request.POST.get('label')
+
+			dataList=data.split(',')
+			temp = []
+			for i in range(n):
+				for j in range(m):
+					temp.append(float(dataList[i * m + j]))
+			dataMat = np.array(temp)
+			dataMat = dataMat.reshape((n, m))
+
+			labelList=label.split(',')
+			temp=[]
+			for i in range(n):
+				temp.append(labelList[i])
+			labelMat=np.array(temp)
+
+			# print(dataMat)
+			# print(labelMat)
+
+			#求轮廓系数
+			sil_coe=metrics.silhouette_score(
+				dataMat,labelMat
+			)
+			#求CH指数
+			CH_index=metrics.calinski_harabaz_score(dataMat,labelMat)
+
+			result = {"sil_coe": sil_coe,"CH_index":CH_index}
+			return HttpResponse(json.dumps(result))
+
 		if request.is_ajax() and request.POST['id'] == 'requestPca':
 			n = request.POST.get("n")
 			m = request.POST.get("m")
 			Data = request.POST.get("Data")
+
+
 			n = n.encode("utf-8")
 			m = m.encode("utf-8")
 			# Data = Data.encode("utf-8")
@@ -24,7 +60,13 @@ def home(request):
 				for j in range(m):
 					tem.append(float(DataList[i * m + j]))
 			dataMat = np.array(tem)
+
+			# print(dataMat)
+
 			dataMat = dataMat.reshape((n, m))
+
+			# print(dataMat)
+
 			pcavec = Pca(dataMat)
 			temresult=np.mat(dataMat)*np.mat(pcavec)
 			temresult=np.array(temresult)

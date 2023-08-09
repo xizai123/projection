@@ -10,3 +10,14 @@
 +defaults/win-64::vs2015_runtime-14.27.29016-h5e58377_2
 +defaults/win-64::wincertstore-0.2-py35hfebbdb8_0
 # update specs: ['python=3.5']
+==> 2023-08-08 19:15:14 <==
+# cmd: C:\Users\dengchunxi\anaconda3\Scripts\conda-script.py install -p D:/projection/env scikit-learn -y
+# conda version: 23.3.1
++defaults/win-64::blas-1.0-mkl
++defaults/win-64::icc_rt-2022.1.0-h6049295_2
++defaults/win-64::intel-openmp-2023.1.0-h59b6b97_46319
++defaults/win-64::mkl-2018.0.3-1
++defaults/win-64::numpy-1.14.2-py35h5c71026_0
++defaults/win-64::scikit-learn-0.20.0-py35heebcf9a_1
++defaults/win-64::scipy-1.1.0-py35hc28095f_0
+# update specs: ['scikit-learn']

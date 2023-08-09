@@ -127,6 +127,11 @@ function loadPartdata(data1,partPath){
             for(let i=0;i<glovar.dataSize;i++){
                 glovar.clusterName.push(-1)
             }
+            //随机生成每个点的真实标签
+            for(let i=0;i<glovar.dataSize;i++){
+                let random_number = Math.floor(Math.random()*Math.floor(5));
+                glovar.actualCluster[i]=random_number;
+            }
 
             requestPca();
         });

@@ -1531,7 +1531,7 @@ function updateView(vector){
         glovar.Is_lasso=true;
         glovar.Is_line=false;
         document.getElementById("toLinedist").value=null;
-        glovar.beginTime=Date.now();     //点击聚类后开始计时
+        glovar.beginTime=Date.now()/1000;     //点击聚类后开始计时
      }
      if(value==1){
         glovar.Is_point=false;

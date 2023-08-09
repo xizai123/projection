@@ -23,10 +23,10 @@ var globalVariable = function () {
     ret.clearStarCoordinate=0;      //是否展示星坐标图
     ret.angle=[];                     //维度的度数
 
-    ret.labelSize=0;                    //真正有几类标签(集群）
-    ret.actualCluster=[];               //每个点真实所属的集群名
+    ret.labelSize=5;                    //真正有几类标签(集群）(暂时设定为5类）
+    ret.actualCluster=[];               //每个点真实所属的集群名(暂时为随机生成）
     ret.clusterName=[];                //预测每个点所属集群的名字  初始全是-1
-    ret.beginTime=0;                  //起始时间（从点击聚类模式开始计算,时间指标单位为毫秒）
+    ret.beginTime=0;                  //起始时间（从点击聚类模式开始计算,时间指标单位为秒）
     ret.painted_id=[];                  //当前轮次被着色的点
     //最多分为11类
     for(let i=0;i<11;i++){

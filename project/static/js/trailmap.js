@@ -33,18 +33,25 @@ function saveProjection(){
 function updateRecord(){
     //计算准确率、精确率、召回率、f1
     let acc=0;let precision=0;let recall=0;let f1=0
+    //记录每个点的预测标签（若未上色则为-1）
+    let predicted=[];for(let i=0;i<glovar.dataSize;i++)predicted[i]=-1;
+
+    //将每个点按颜色进行分类
     for(let i=0;i<glovar.dataSize;i++){
         let paintLabel=glovar.clusterName[i];
         if(paintLabel!==-1)glovar.painted_id[paintLabel].setofId.push(i);
     }
+
     for(let i=0;i<11;i++){
-        //占比最多的真实标签为该片颜色的预测标签
+        //检查每种被涂过的颜色
         if(glovar.painted_id[i].setofId.length!==0){
             let numOfLabel=[];for(let i=0;i<glovar.labelSize;i++)numOfLabel[i]=0;
             for(let j=0;j<glovar.painted_id[i].setofId.length;j++){
                 let id=glovar.painted_id[i].setofId[j];
                 numOfLabel[glovar.actualCluster[id]]++;
             }
+
+            //占比最多的真实标签为该片颜色的预测标签
             let predicetedLabelNum=0;let predictedLabel=-1;
             for(let i=0;i<glovar.labelSize;i++){
                 if(numOfLabel[i]>predicetedLabelNum){
@@ -52,6 +59,9 @@ function updateRecord(){
                     predictedLabel=i;
                 }
             }
+            glovar.painted_id[i].predictedLabel=predictedLabel;
+
+            //计算指标
             acc+=predicetedLabelNum;
             precision+=predicetedLabelNum/glovar.painted_id[i].setofId.length;
             let actualNumofpredicetedLabel=0;
@@ -59,6 +69,12 @@ function updateRecord(){
                 if(glovar.actualCluster[i]==predictedLabel)actualNumofpredicetedLabel++;
             }
             recall+=predicetedLabelNum/actualNumofpredicetedLabel;
+
+            //给已上色的点打上预测标签
+            for(let j=0;j<glovar.painted_id[i].setofId.length;j++){
+                let id=glovar.painted_id[i].setofId[j];
+                predicted[id]=predictedLabel;
+            }
         }
     }
     acc/=glovar.dataSize;
@@ -73,18 +89,48 @@ function updateRecord(){
         }
     }
 
-    //计算距离一致性，轮廓系数
-    let dist_consis=0;let sil_coe=0;
-    
+    // 计算轮廓系数与CH指数
+    let sil_coe=0;let CH_index=0;
+    var formData=new FormData();
+    formData.append("id","request_silhouette_score");
+    formData.append("csrfmiddlewaretoken", token);
+    formData.append("data",glovar.pcaData);
+    formData.append("n",glovar.dataSize);
+    formData.append("label",predicted);
+
+   $.ajaxSetup({
+        data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+    });
+
+   $.ajax(
+        {
+            url:"/",
+            type:"POST",
+            data:formData,
+            processData: false,
+            contentType: false,
+            success:function(data){
+                console.log('success')
+                jsObj = $.parseJSON(data);
+                sil_coe=jsObj.sil_coe;
+                CH_index=jsObj.CH_index;
+            },
+            error:function(data){
+                console.log("request failed");
+            }
+        });
 
     let indic_now={
-        cumula_time:Date.now()-glovar.beginTime,        //累计时间
+        cumula_time:Date.now()/1000-glovar.beginTime,        //累计时间
         acc:acc,                                        //准确率
         precision:precision,                            //精确率
         f1:f1,                                          //f1
-        dist_consis:dist_consis,                        //距离一致性
         sil_coe:sil_coe,                                //轮廓系数
+        CH_index:CH_index,                              //CH指数
     }
+
+    console.log(indic_now)
+
     glovar.indic_record.push(indic_now)
 }
 

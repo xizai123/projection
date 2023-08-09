@@ -64,6 +64,25 @@ var globalVariable = function () {
     ret.dblCoordinate=[];
     ret.dblVec=[];
 
+    /**
+     * 
+     * 测试模式
+     * 
+     */
+    ret.layout = {
+        'min_angle':0,
+        'cross':0,
+    }
+    /**
+     * 
+     * 2023.08.08邓志伟新增
+     * 
+     */
+    ret.trail_links = [];//默认连接线
+    ret.trail_pos = [];//连接线的端点位置
+    ret.begin_id = -1;//当前略缩图的id
+
+
 
     return ret;
 }

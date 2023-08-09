@@ -1,17 +1,52 @@
 /**
  * 保存投影
  */
-//点击保存视为一次交互结束,需计算当轮交互的各种指标
+
+
+
+/**
+ * 
+ * 轨迹更新流程笔记：
+ * glovar.actionVec是最新的向量
+ * glovar.saveVec存储了历次保存轨迹时的actionVec
+ * 
+ * 每次点击”保存“按钮，会调用saveProjection函数
+ * 如果是第一次保存轨迹，那么直接截取g1中的坐标保存。
+ * 如果是第二次以及以后保存轨迹，那么需要调用requestMds算法，将结果保存在glovar.mdsData，mdsData的size与保存的轨迹数等同
+ * 再mdsData更新后，随后，调用converSubspace，更新旧轨迹图的位置和新建轨迹图（mdsData主要是更新位置）。
+ * 
+ *  
+ * 
+ * 
+ * 
+ */
+
+//点击保存视为一次交互结束
 function saveProjection(){
 
-    deleteTrailmapInfor();
+    deleteTrailmapInfor();//删除先前所有的轨迹信息
+
     glovar.saveVec.push(glovar.actionVec);
-    if(glovar.saveVec.length==1){
+    console.log('saveProjection-glovar:',glovar)
+
+
+    let subScatterID=glovar.saveVec.length-1;
+    //装入link
+    if(glovar.begin_id != -1 && glovar.begin_id != parseInt(subScatterID)){
+        glovar.trail_links.push([glovar.begin_id,parseInt(subScatterID)])
+    }
+
+
+    //将当前id保存
+    glovar.begin_id = parseInt(subScatterID)
+
+
+    if(glovar.saveVec.length==1){//第一次保存轨迹
         var offsetx=300;
         var offsety=300;
         var width = 100;
         var height = 100;
-        var subScatterID=glovar.saveVec.length-1;
+        
         var points = [];
         d3.select("#g1").selectAll("circle").each(function (d, i) {
                 var me = d3.select(this);
@@ -23,7 +58,7 @@ function saveProjection(){
             });
         paintSubscatter(points,subScatterID,offsetx,offsety,width,height);
     }
-    if(glovar.saveVec.length>1){
+    if(glovar.saveVec.length>1){//第二次及以后保存轨迹
         requestMds(glovar.saveVec);
     }
     updateRecord()
@@ -132,6 +167,101 @@ function updateRecord(){
     console.log(indic_now)
 
     glovar.indic_record.push(indic_now)
+
+
+    /**
+     * 
+     * 更新layout的信息
+     * 
+     */
+    //统计最小平均夹角
+    glovar.layout.min_angle = 0;
+    const getAngle = ({ x: x1, y: y1 }, { x: x2, y: y2 }) => {
+        const dot = x1 * x2 + y1 * y2
+        const det = x1 * y2 - y1 * x2
+        const angle = Math.atan2(det, dot) / Math.PI * 180
+        return Math.round(angle + 360) % 360
+    }
+
+    let count = 0;
+
+    for(let i = 0;i < glovar.trail_pos.length;i++){
+        let neighbors = []
+        for(let l of glovar.trail_links){
+            if(l[0] == i){
+                neighbors.push(glovar.trail_pos[l[1]])
+            }
+            if(l[1] == i){
+                neighbors.push(glovar.trail_pos[l[0]])
+            }
+        }
+        
+        if(neighbors.length >= 2){
+            let min_angle = 360;
+            for(let j = 0;j < neighbors.length - 1;j++){
+                for(let k = j+1; k < neighbors.length;k++){
+                    const angle = getAngle({
+                        x:neighbors[j][0] - glovar.trail_pos[i][0],
+                        y:neighbors[j][1] - glovar.trail_pos[i][1]
+                    },{
+                        x:neighbors[k][0] - glovar.trail_pos[i][0],
+                        y:neighbors[k][1] - glovar.trail_pos[i][1]
+                    })
+                    if(angle < min_angle){
+                        min_angle = angle;
+                    }
+                }
+            }
+            glovar.layout.min_angle = glovar.layout.min_angle + min_angle;
+            count = count + 1;
+        }
+        
+    }
+    if(count != 0){
+        glovar.layout.min_angle = 1.0 * glovar.layout.min_angle / count;
+    }  
+    else{
+        glovar.layout.min_angle = 360;
+    }
+
+    //统计交叉数
+    glovar.layout.cross = 0;
+    function judgeIntersect(x1,y1,x2,y2,x3,y3,x4,y4) {
+        //快速排斥：
+        //两个线段为对角线组成的矩形，如果这两个矩形没有重叠的部分，那么两条线段是不可能出现重叠的
+        //这里的确如此，这一步是判定两矩形是否相交
+        //1.线段ab的低点低于cd的最高点（可能重合）
+        //2.cd的最左端小于ab的最右端（可能重合）
+        //3.cd的最低点低于ab的最高点（加上条件1，两线段在竖直方向上重合）
+        //4.ab的最左端小于cd的最右端（加上条件2，两直线在水平方向上重合）
+        //综上4个条件，两条线段组成的矩形是重合的
+        //特别要注意一个矩形含于另一个矩形之内的情况
+        if(!(Math.min(x1,x2)<=Math.max(x3,x4) && Math.min(y3,y4)<=Math.max(y1,y2)&&Math.min(x3,x4)<=Math.max(x1,x2) && Math.min(y1,y2)<=Math.max(y3,y4)))
+            return false;
+        //跨立实验：
+        //如果两条线段相交，那么必须跨立，就是以一条线段为标准，另一条线段的两端点一定在这条线段的两段
+        //也就是说a b两点在线段cd的两端，c d两点在线段ab的两端
+        var u,v,w,z
+        u=(x3-x1)*(y2-y1)-(x2-x1)*(y3-y1);
+        v=(x4-x1)*(y2-y1)-(x2-x1)*(y4-y1);
+        w=(x1-x3)*(y4-y3)-(x4-x3)*(y1-y3);
+        z=(x2-x3)*(y4-y3)-(x4-x3)*(y2-y3);
+        return (u*v<0 && w*z<0);
+    }
+    for(let i = 0;i < glovar.trail_links.length - 1;i++){
+        for(let j = i + 1; j < glovar.trail_links.length; j++){
+            let pos1 = glovar.trail_pos[glovar.trail_links[i][0]]
+            let pos2 = glovar.trail_pos[glovar.trail_links[i][1]]
+            let pos3 = glovar.trail_pos[glovar.trail_links[j][0]]
+            let pos4 = glovar.trail_pos[glovar.trail_links[j][1]]
+            if(judgeIntersect(pos1[0],pos1[1],pos2[0],pos2[1],pos3[0],pos3[1],pos4[0],pos4[1])){
+                glovar.layout.cross = glovar.layout.cross + 1;
+            }
+        }
+    }
+
+    console.log('test:',glovar.layout)
+
 }
 
 /**
@@ -153,19 +283,51 @@ function deleteTrailmapInfor(){
 }
 
 /**
- * 将mds布局数据转换到子空间投影
+ * 将mds布局数据转换到子空间投影（更新和新建）
  * @param mdsdata
  */
 function converSubspace(mdsdata){
-    var height=700;
-    var width=700;
+    var height=880;
+    var width=650;
+    var padding = 200;
+
+    //改为依据力导引布局
+    let nodes = [];
+    let links = [];
+    for(let i = 0;i < mdsdata.length;i++){
+        nodes.push({'id':i})
+    }
+    for(let l of glovar.trail_links){
+        links.push({'source':l[0],'target':l[1]})
+    }
+    let layout_result = getForceDirected(nodes,links,width - 2 * padding,height - 2 * padding)
+
+    let xMax = Math.max(...layout_result.nodes.map(v=>v.x))
+    let xMin = Math.min(...layout_result.nodes.map(v=>v.x))
+    let yMax = Math.max(...layout_result.nodes.map(v=>v.y))
+    let yMin = Math.min(...layout_result.nodes.map(v=>v.y))
+
+
     var xScale = d3.scale.linear()
-        .domain([-0.8,0.8])
-        .range([0, width]);
+        .domain([xMin,xMax])
+        .range([padding, width -padding]);
     var yScale = d3.scale.linear()
-        .domain([-0.8,0.8])
-        .range([height, 0]);
-    for(var i=0;i<mdsdata.length;i++){
+        .domain([yMin,yMax])
+        .range([height - padding, padding]);
+
+    // var xScale = d3.scale.linear()
+    //     .domain([-0.8,0.8])
+    //     .range([0, width]);
+    // var yScale = d3.scale.linear()
+    //     .domain([-0.8,0.8])
+    //     .range([height, 0]);
+
+
+    
+
+
+
+    for(var i=0;i<mdsdata.length;i++){//前几项的旧数据
         var points=[];
         if(i<mdsdata.length-1){
             d3.selectAll(".circle"+i).each(function () {
@@ -176,8 +338,8 @@ function converSubspace(mdsdata){
             var opacity=glovar.baseOpacity;
             points.push([cx, cy, color,opacity]);
         });
-        }else{
-            d3.select("#g1").selectAll("circle").each(function () {
+        }else{//最后一项数据，也是新增加的数据
+            d3.select("#g1").selectAll("circle").each(function () {//从中央的投影视图取位置
                 var me = d3.select(this);
                 var cx = parseFloat(me.attr("cx"));
                 var cy = parseFloat(me.attr("cy"));
@@ -188,10 +350,67 @@ function converSubspace(mdsdata){
         }
         var width=100;
         var height=100;
-        var offsetx=xScale(mdsdata[i][0])-width/2;
-        var offsety=yScale(mdsdata[i][1])-height/2;
+        // var offsetx=xScale(mdsdata[i][0])-width/2;
+        // var offsety=yScale(mdsdata[i][1])-height/2;
+        var offsetx=xScale(layout_result.nodes[i].x) - 0.5 * width;
+        var offsety=yScale(layout_result.nodes[i].y) - 0.5 * height
         paintSubscatter(points,i,offsetx,offsety,width,height);
     }
+
+    //定义arrow
+    const svg = d3.select("#projectionbody").select("svg");
+    let innerArrowSize = 5;
+    svg.selectAll('#trail_arrow').remove();
+    svg.append('marker')
+            .attr('id', `trail_arrow`)
+            .attr('markerWidth', innerArrowSize)
+            .attr('markerHeight', innerArrowSize)
+            .attr('refX', innerArrowSize)
+            .attr('refY', 0.5 * innerArrowSize)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('fill', '#434343')
+            .attr('d', `M 0,0 L ${innerArrowSize},${0.5*innerArrowSize} L 0,${innerArrowSize}`)
+    //绘制初始连线
+    
+    svg.select('.linkPlot').remove();
+    const linkPlot = svg.append('g').classed('linkPlot',true)
+    linkPlot
+        .selectAll('*')
+        .data(glovar['trail_links'])
+        .enter()
+        .append('line')
+        .style('stroke',"black")
+        .style('stroke-width',4)
+        .attr('opacity',0.7)
+        .attr('marker-end','url(#trail_arrow)')
+        .attr('x1',function(d){
+            return glovar.trail_pos[d[0]][0]
+        })
+        .attr('y1',function(d){
+            return glovar.trail_pos[d[0]][1]
+        })
+        .attr('x2',function(d){
+            return glovar.trail_pos[d[1]][0]
+        })
+        .attr('y2',function(d){
+            return glovar.trail_pos[d[1]][1]
+        })
+        .style('cursor','pointer')
+        .on("mouseover",function(){
+            d3.select(this).style("stroke","orange");
+        })
+        .on("mouseout",function(){
+            d3.select(this).style("stroke","black");
+        })
+        .on('click',function(d){
+            glovar.beginVec = glovar.saveVec[d[0]];
+            glovar.endVec=glovar.saveVec[d[1]];
+            paintSourceThumbnail(glovar.beginVec)
+            paintTargetThumbnail(glovar.endVec);
+            setAnimation();        
+        })
+
 }
 
 /**
@@ -209,6 +428,12 @@ function paintSubscatter(points,subScatterID,offsetx,offsety,width,height){
     var g=svg.append("g")
         .attr("id","sg"+subScatterID)
         .attr("transform","translate("+offsetx+','+offsety+")");
+
+
+    //装填轨迹的中心位置(绝对)
+    glovar.trail_pos[subScatterID] = ([offsetx+width/2,offsety+height/2])
+
+
 
     var max_x = d3.max(points, function (d) {
         return d[0];
@@ -241,64 +466,76 @@ function paintSubscatter(points,subScatterID,offsetx,offsety,width,height){
         .attr("stroke-width","1px")
         .attr("fill","none")
         .style("pointer-events","all")
-        .on("click",function(){
-                clearTimeout(timer);
-                var me = d3.select(this);
-                timer=setTimeout(function(){
-                d3.selectAll(".connectLine").remove();
-                glovar.dblFlag=0;
-                glovar.dblCoordinate=[];
-                glovar.dblVec=[];
+        // .on("click",function(){
+        //         clearTimeout(timer);
+        //         var me = d3.select(this);
+        //         timer=setTimeout(function(){
+        //             d3.selectAll(".connectLine").remove();
+        //             glovar.dblFlag=0;
+        //             glovar.dblCoordinate=[];
+        //             glovar.dblVec=[];
 
-                me.attr("stroke", "yellow");
-                var ID = me.attr("id");
-                var cx = parseFloat(me.attr("cx"));
-                var cy = parseFloat(me.attr("cy"));
-                glovar.lineCoordinate.push([cx + offsetx, cy + offsety]);
-                glovar.backtoviewVec.push(glovar.saveVec[ID]);
-                paintDotline();
-                },300);
-            })
-        .on("dblclick", function () {
-
-            clearTimeout(timer);
+        //             me.attr("stroke", "yellow");
+        //             var ID = me.attr("id");
+        //             var cx = parseFloat(me.attr("cx"));
+        //             var cy = parseFloat(me.attr("cy"));
+        //             glovar.lineCoordinate.push([cx + offsetx, cy + offsety]);
+        //             glovar.backtoviewVec.push(glovar.saveVec[ID]);
+        //             paintDotline();
+        //         },300);
+        //     })
+        .on("click",function(){//切换起始略缩图
             var gme = d3.select(this);
-            d3.selectAll(".circleFrame").attr("stroke","#6D6D6D");
-            d3.select("#animationCircle").remove();
-            d3.selectAll("#linepath").remove();
-            glovar.lineCoordinate=[];
-            glovar.pathCoordinate=[];
-            glovar.backtoviewVec=[];
-
             var ID = parseInt(gme.attr("id"));
-            var gcx = parseFloat(gme.attr("cx"));
-            var gcy = parseFloat(gme.attr("cy"));
-            glovar.dblCoordinate.push([gcx + offsetx, gcy + offsety]);
-            glovar.dblVec.push(glovar.saveVec[ID]);
-            if(glovar.dblFlag==0){
-                var gpoints = [];
-                g.selectAll(".circle" + subScatterID)
-                    .each(function (d, i) {
-                        var me = d3.select(this);
-                        var cx = parseFloat(me.attr("cx"));
-                        var cy = parseFloat(me.attr("cy"));
-                        var opacity = me.attr("opacity");
-                        var color = me.attr("fill");
-                        gpoints.push([cx, cy, color, opacity]);
-                    });
-                for (var i = 0; i < gpoints.length; i++) {
-                    glovar.pointsColor[i] = gpoints[i][2];
-                    // glovar.pointsOpacity[i] = gpoints[i][3];
-                }
-                glovar.beginVec = glovar.saveVec[ID];
-                paintSourceThumbnail(glovar.beginVec);
-                d3.select("#g6").remove();//删除终止缩略图
-                updateView(glovar.beginVec);
-            }else{
-                paintConnectline(glovar.dblFlag);
-            }
-            glovar.dblFlag++;
-        });
+            glovar.beginVec = glovar.saveVec[ID];
+            glovar.begin_id = ID
+            paintSourceThumbnail(glovar.beginVec);
+            d3.select("#g6").remove();//删除终止缩略图
+            updateView(glovar.beginVec);
+        })
+        // .on("dblclick", function () {
+        //     clearTimeout(timer);
+        //     var gme = d3.select(this);
+        //     d3.selectAll(".circleFrame").attr("stroke","#6D6D6D");
+        //     d3.select("#animationCircle").remove();
+        //     d3.selectAll("#linepath").remove();
+        //     glovar.lineCoordinate=[];
+        //     glovar.pathCoordinate=[];
+        //     glovar.backtoviewVec=[];
+
+        //     var ID = parseInt(gme.attr("id"));
+        //     var gcx = parseFloat(gme.attr("cx"));
+        //     var gcy = parseFloat(gme.attr("cy"));
+        //     glovar.dblCoordinate.push([gcx + offsetx, gcy + offsety]);
+        //     glovar.dblVec.push(glovar.saveVec[ID]);
+        //     if(glovar.dblFlag==0){
+        //         var gpoints = [];
+        //         g.selectAll(".circle" + subScatterID)
+        //             .each(function (d, i) {
+        //                 var me = d3.select(this);
+        //                 var cx = parseFloat(me.attr("cx"));
+        //                 var cy = parseFloat(me.attr("cy"));
+        //                 var opacity = me.attr("opacity");
+        //                 var color = me.attr("fill");
+        //                 gpoints.push([cx, cy, color, opacity]);
+        //             });
+        //         for (var i = 0; i < gpoints.length; i++) {
+        //             glovar.pointsColor[i] = gpoints[i][2];
+        //             // glovar.pointsOpacity[i] = gpoints[i][3];
+        //         }
+
+        //         // console.log('beginID:',ID)
+        //         // glovar.beginVec = glovar.saveVec[ID];
+        //         // paintSourceThumbnail(glovar.beginVec);
+        //         // d3.select("#g6").remove();//删除终止缩略图
+        //         // updateView(glovar.beginVec);
+
+        //     }else{
+        //         paintConnectline(glovar.dblFlag);
+        //     }
+        //     glovar.dblFlag++;
+        // })
+        .style('cursor','pointer')
 
     g.selectAll(".circle"+subScatterID)
         .data(points)
@@ -465,8 +702,9 @@ function paintConnectline(i){
  * 子空间动画函数
  */
 function setSubAnimation(){
+
     getSubvector();
-    paintAnimationCircle(glovar.lineCoordinate[0][0],glovar.lineCoordinate[0][1]);
+    // paintAnimationCircle(glovar.lineCoordinate[0][0],glovar.lineCoordinate[0][1]);
     paintSourceThumbnail(glovar.beginVec);
     paintTargetThumbnail(glovar.endVec);
 
@@ -550,5 +788,48 @@ function paintAnimationCircle(cx,cy){
         .attr("fill","yellow");
 }
 
+
+
+/**
+ * 
+ * 获取力导向引布局
+ * @param links
+ * @param nodes
+ * 
+ */
+function getForceDirected(nodes,links,width,height){
+
+    __nodes = JSON.parse(JSON.stringify(nodes))
+    __links = JSON.parse(JSON.stringify(links))
+
+    // let simulation = d3.forceSimulation().nodes(__nodes);
+    // let linkForce = d3.forceLink(__links).id(d=>d.id)
+
+    // simulation.force('charge_force', d3.forceManyBody().strength(-50))
+    //           .force('center_force', d3.forceCenter(0,0))//中心点为原点
+    //           .force('links', linkForce)
+
+    // simulation.stop();
+    // simulation.tick(300);
+    let force = d3.layout.force()
+                 .nodes(__nodes)
+                 .links(__links)
+                 .size([600,600])
+                //  .gravity(.05)
+                 .charge(-1200)
+                 .linkDistance(50)
+                 .start();
+    for(let i = 0;i < 3000;i++){
+        force.tick();
+    }
+
+    force.stop();
+
+    return {
+        'nodes':__nodes,
+        'links':__links,
+    }
+
+}
 
 

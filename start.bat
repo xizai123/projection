@@ -1,0 +1,1 @@
+env\python.exe manage.py runserver
